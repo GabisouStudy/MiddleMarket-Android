@@ -3,6 +3,7 @@ package com.example.gabriel.middlemarket;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.text.style.LineHeightSpan;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -17,6 +18,10 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
     public static final int WIDTH = 856;
     public static final int HEIGHT = 480;
     public static final int MOVESPEED = -5;
+
+    Rect rect;
+
+
     private MainThread thread;
 
     private Background bg;
@@ -71,12 +76,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
-
+        final int scaleIndexX = getWidth()/WIDTH;
+        final int scaleIndexY = getHeight()/HEIGHT;
 
         float x = event.getX();
         float y = event.getY();
 
-        player.setPosition((int)x, (int)y);
+        player.setPosition( ((int)x)/scaleIndexX + rect.left, ((int)y)/scaleIndexY + rect.top);
 
         return  true;
     }
@@ -88,9 +94,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void draw(Canvas canvas){
         final float scaleFactorX = getWidth()/(WIDTH*1.f);
-        final float scaleFactorY = getWidth()/(HEIGHT*1.f);
+        final float scaleFactorY = getHeight()/(HEIGHT*1.f);
+
+        rect = canvas.getClipBounds();
+
         if(canvas != null) {
             final int savedState = canvas.save();
+            canvas.scale(scaleFactorX, scaleFactorY);
             bg.draw(canvas);
             player.draw(canvas);
             canvas.restoreToCount(savedState);

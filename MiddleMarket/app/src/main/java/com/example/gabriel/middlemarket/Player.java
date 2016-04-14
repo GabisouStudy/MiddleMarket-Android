@@ -31,6 +31,6 @@ public class Player extends GameObject{
 
     public void draw(Canvas canvas)
     {
-        canvas.drawBitmap(sprite, (x - (width/2)), (y - (width/2)), null);
+        canvas.drawBitmap(sprite, (x - (width/2)), (y - (height/2)), null);
     }
 }
