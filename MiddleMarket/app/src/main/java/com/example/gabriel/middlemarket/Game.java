@@ -1,7 +1,9 @@
 package com.example.gabriel.middlemarket;
 
+import android.graphics.Point;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
@@ -19,7 +21,13 @@ public class Game extends AppCompatActivity {
         //set to full screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(new GamePanel(this));
+        // Get a Display object to access screen details
+        Display display = getWindowManager().getDefaultDisplay();
+        // Load the resolution into a Point object
+        Point size = new Point();
+        display.getSize(size);
+
+        setContentView(new GamePanel(this, size.x, size.y));
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {

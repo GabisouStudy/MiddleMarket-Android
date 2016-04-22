@@ -1,6 +1,7 @@
 package com.example.gabriel.middlemarket;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -15,22 +16,32 @@ import android.view.SurfaceView;
 
 public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
 {
-    public static final int WIDTH = 856;
+    public static final int WIDTH = 800;
     public static final int HEIGHT = 480;
     public static final int MOVESPEED = -5;
 
-    Rect rect;
+    private int screenX;
+    private int screenY;
 
+    private int gameState;
+
+    private boolean touch = false;
 
     private MainThread thread;
 
     private Background bg;
     private Player player;
 
-    public GamePanel(Context context)
+    private Item[] items = new Item[5];
+
+    private Requester[] requesters = new Requester[5];
+
+
+    private Bitmap[] itemsSprites = new Bitmap[5];
+
+    public GamePanel(Context context, int x, int y)
     {
         super(context);
-
 
         //add the callback to the surfaceholder to intercept events
         getHolder().addCallback(this);
@@ -39,6 +50,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
 
         //make gamePanel focusable so it can handle events
         setFocusable(true);
+
+        screenX = x;
+        screenY = y;
     }
 
     @Override
@@ -60,15 +74,36 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder holder){
-
-        bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgclouds));
-        bg.setVector(-5);
-
-        player = new Player(BitmapFactory.decodeResource(getResources(), R.drawable.hand_player), 40, 60);
         //we can safely start the game loop
         thread.setRunning(true);
         thread.start();
 
+        gameState = 0;
+
+
+        bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgclouds));
+        bg.setVector(-5);
+
+        player = new Player(BitmapFactory.decodeResource(getResources(), R.drawable.hand_player), 40, 60, (WIDTH - 200), itemsSprites);
+
+        itemsSprites[0] = BitmapFactory.decodeResource(getResources(), R.drawable.item0);
+        itemsSprites[1] = BitmapFactory.decodeResource(getResources(), R.drawable.item1);
+        itemsSprites[2] = BitmapFactory.decodeResource(getResources(), R.drawable.item2);
+        itemsSprites[3] = BitmapFactory.decodeResource(getResources(), R.drawable.item3);
+        itemsSprites[4] = BitmapFactory.decodeResource(getResources(), R.drawable.item4);
+
+    }
+
+    public void startGame(){
+        player = new Player(BitmapFactory.decodeResource(getResources(), R.drawable.hand_player), 40, 60, (WIDTH - 200), itemsSprites);
+
+        for(int i = 0; i <= 4; i++){
+            items[i] = new Item(itemsSprites[i], i, (HEIGHT - 120));
+        }
+
+        for(int i = 0; i <= 4; i++){
+            requesters[i] = new Requester(itemsSprites, (HEIGHT - 240), i);
+        }
     }
 
 
@@ -76,33 +111,110 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
-        final int scaleIndexX = getWidth()/WIDTH;
-        final int scaleIndexY = getHeight()/HEIGHT;
+        final float scaleIndexX = (screenX/(WIDTH*1.f));
+        final float scaleIndexY = (screenY/(HEIGHT*1.f));
 
         float x = event.getX();
         float y = event.getY();
 
-        player.setPosition( ((int)x)/scaleIndexX + rect.left, ((int)y)/scaleIndexY + rect.top);
+        player.setPosition(((int) (x * scaleIndexX)), ((int) (y * scaleIndexY)));
+
+        if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+            touch = true;
+        } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+            touch = false;
+        }
 
         return  true;
     }
+
+    public boolean collision(GameObject rect1, GameObject rect2){
+        if (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.height + rect1.y > rect2.y) {
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     public void update()
     {
 
-        bg.update();
+        switch (gameState){
+            case 0:
+                if(touch){
+                    startGame();
+                    gameState = 1;
+                }
+                bg.update();
+                break;
+
+            case 1:
+                bg.update();
+                for(int i = 0; i <= 4; i++){
+                    if(collision(player, items[i]) && player.getSelect() == 5 && touch){
+                        player.setSelect(i);
+                        break;
+                    }else if(!touch){
+                        player.setSelect(5);
+                    }
+                }
+
+                for(int i = 0; i <= 4; i++){
+                    if(requesters[i].x < WIDTH) {
+                        requesters[i].move();
+                    }else{
+                        requesters[i].reset();
+                        player.setLife(player.getLife()-1);
+                    }
+
+                    if(collision(requesters[i], player)){
+                        if(player.getSelect() == requesters[i].getRequest()){
+
+                            player.setSelect(5);
+                            player.setScore(player.getScore()+1);
+                            requesters[i].reset();
+                        }
+                    }
+                }
+
+                if(player.getLife() <= 0){
+                    player.setLife(0);
+                    gameState = 2;
+                }
+                break;
+
+            case 2:
+                if(touch){
+                    gameState = 0;
+                }
+                break;
+        }
+
+
     }
+
+
     @Override
     public void draw(Canvas canvas){
-        final float scaleFactorX = getWidth()/(WIDTH*1.f);
-        final float scaleFactorY = getHeight()/(HEIGHT*1.f);
+        final float scaleFactorX = screenX/(WIDTH*1.f);
+        final float scaleFactorY = screenY/(HEIGHT*1.f);
 
-        rect = canvas.getClipBounds();
+
 
         if(canvas != null) {
             final int savedState = canvas.save();
             canvas.scale(scaleFactorX, scaleFactorY);
             bg.draw(canvas);
+
+            if(gameState == 1) {
+                for (int i = 0; i <= 4; i++) {
+                    items[i].draw(canvas);
+                    requesters[i].draw(canvas);
+                }
+            }
+
             player.draw(canvas);
+
             canvas.restoreToCount(savedState);
         }
     }
