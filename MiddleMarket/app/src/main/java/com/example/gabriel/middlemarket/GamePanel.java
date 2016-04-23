@@ -30,6 +30,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
     private MainThread thread;
 
     private Background bg;
+    private FullScreen screen;
     private Player player;
 
     private Item[] items = new Item[5];
@@ -38,6 +39,10 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
 
 
     private Bitmap[] itemsSprites = new Bitmap[5];
+
+    private Bitmap[] requestsSprites = new Bitmap[5];
+
+    private Bitmap[] screens = new Bitmap[3];
 
     public GamePanel(Context context, int x, int y)
     {
@@ -80,6 +85,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
 
         gameState = 0;
 
+        screen = new FullScreen(screens, gameState);
 
         bg = new Background(BitmapFactory.decodeResource(getResources(), R.drawable.bgclouds));
         bg.setVector(-5);
@@ -92,6 +98,16 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
         itemsSprites[3] = BitmapFactory.decodeResource(getResources(), R.drawable.item3);
         itemsSprites[4] = BitmapFactory.decodeResource(getResources(), R.drawable.item4);
 
+        requestsSprites[0] = BitmapFactory.decodeResource(getResources(), R.drawable.request0);
+        requestsSprites[1] = BitmapFactory.decodeResource(getResources(), R.drawable.request1);
+        requestsSprites[2] = BitmapFactory.decodeResource(getResources(), R.drawable.request2);
+        requestsSprites[3] = BitmapFactory.decodeResource(getResources(), R.drawable.request3);
+        requestsSprites[4] = BitmapFactory.decodeResource(getResources(), R.drawable.request4);
+
+        screens[0] = BitmapFactory.decodeResource(getResources(), R.drawable.menu);
+        screens[1] = BitmapFactory.decodeResource(getResources(), R.drawable.gameplay);
+        screens[2] = BitmapFactory.decodeResource(getResources(), R.drawable.gameover);
+
     }
 
     public void startGame(){
@@ -102,7 +118,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
         }
 
         for(int i = 0; i <= 4; i++){
-            requesters[i] = new Requester(itemsSprites, (HEIGHT - 240), i);
+            requesters[i] = new Requester(requestsSprites, (HEIGHT - 240), i);
         }
     }
 
@@ -138,12 +154,12 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
 
     public void update()
     {
-
         switch (gameState){
             case 0:
                 if(touch){
                     startGame();
                     gameState = 1;
+                    screen.setId(1);
                 }
                 bg.update();
                 break;
@@ -180,12 +196,14 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
                 if(player.getLife() <= 0){
                     player.setLife(0);
                     gameState = 2;
+                    screen.setId(2);
                 }
                 break;
 
             case 2:
                 if(touch){
                     gameState = 0;
+                    screen.setId(0);
                 }
                 break;
         }
@@ -206,6 +224,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
             canvas.scale(scaleFactorX, scaleFactorY);
             bg.draw(canvas);
 
+            screen.draw(canvas);
+
             if(gameState == 1) {
                 for (int i = 0; i <= 4; i++) {
                     items[i].draw(canvas);
@@ -213,7 +233,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
                 }
             }
 
-            player.draw(canvas);
+            if(gameState != 0) {
+                player.draw(canvas);
+            }
 
             canvas.restoreToCount(savedState);
         }

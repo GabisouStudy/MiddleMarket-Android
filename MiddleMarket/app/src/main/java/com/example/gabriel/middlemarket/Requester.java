@@ -46,7 +46,7 @@ public class Requester extends GameObject {
         spriteItems = res;
 
         Random r3 = new Random();
-        speed = r3.nextInt((int)startRandom) + 3;
+        speed = r3.nextInt((int)startRandom) + 5;
     }
 
     public void move(){
@@ -65,7 +65,7 @@ public class Requester extends GameObject {
         y = yLine - extraY;
 
         Random r3 = new Random();
-        speed = r3.nextInt((int)startRandom) + 3;
+        speed = r3.nextInt((int)startRandom) + 5;
         if(startRandom < maxRandom) {
             startRandom += 0.5f;
         }
